@@ -11,11 +11,11 @@ def main():
         if current_player == J1:
             shot = -1
             while shot <0 or shot >=NB_CELLS:
-                shot = int(input ("quel case allez-vous jouer ?"))
-        else:
-            shot = random.randint(0,8)
-            while grids[current_player].cells[shot] != EMPTY:
-                shot = random.randint(0,8)
+                shot = int(input (f"joueur {current_player} : quel case allez-vous jouer ?"))
+        if current_player == J2:
+            shot = -1
+            while shot <0 or shot >=NB_CELLS:
+                shot = int(input (f"joueur {current_player} : quel case allez-vous jouer ?"))
         if (grids[0].cells[shot] != EMPTY):
             grids[current_player].cells[shot] = grids[0].cells[shot]
         else:
@@ -27,8 +27,12 @@ def main():
     print("game over")
     grids[0].display()
     if grids[0].gameOver() == J1:
-        print("You win !")
+        print(f"Player {J1} win !")
     else:
-        print("you loose !")
+        print(f"Player {J1} loose !")
+    if grids[0].gameOver() == J2:
+        print(f"Player {J2} win !")
+    else:
+        print(f"Player {J2} loose !")
 
 main()
