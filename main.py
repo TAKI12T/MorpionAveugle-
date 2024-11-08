@@ -24,6 +24,8 @@ def main():
             current_player = current_player%2+1
         if current_player == J1:
             grids[J1].display()
+        if current_player == J2:
+            grids[J2].display()
     print("game over")
     grids[0].display()
     if grids[0].gameOver() == J1:
