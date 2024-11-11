@@ -20,14 +20,13 @@ def handle_client(client_socket, player, grids, turn):
                 if grids[0].cells[shot] != EMPTY:
                     client_socket.send("Cell already taken, try again.\n".encode())
             
-            
+            # mise a jour de la grille commune et du joueur           
             grids[0].play(player, shot)
-            grids[J1].cells[shot] = grids[0].cells[shot]
-            grids[J2].cells[shot] = grids[0].cells[shot]
-
+            grids[player].cells[shot] = grids[0].cells[shot]
             
+            # change de tour
             turn[0] = J2 if player == J1 else J1
-
+        # pendant le tour de l'autre joueur
         else:
             client_socket.send("Waiting for the other player...\n".encode())
         while turn [0] != player:
