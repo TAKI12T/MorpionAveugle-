@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import time 
 import socket
 from threading import Thread
 from grid import *
@@ -26,9 +27,12 @@ def handle_client(client_socket, player, grids, turn):
 
             
             turn[0] = J2 if player == J1 else J1
+
         else:
             client_socket.send("Waiting for the other player...\n".encode())
-        
+        while turn [0] != player:
+            time.sleep(1) 
+            
         # Envoie uniquement la partie de la grille pour le joueur courant
         client_socket.send(grids[player].display_string().encode())
 
