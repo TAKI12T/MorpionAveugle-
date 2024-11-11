@@ -5,7 +5,7 @@ import socket
 from threading import Thread
 from grid import *
 
-def handle_client(client_socket, player, grids, turn):
+def handle_client(client_socket, player, grids, turn, other_socket):
     client_socket.send(f"Welcome Player {player}\n".encode())
     client_socket.send(grids[player].display_string().encode())
 
@@ -26,10 +26,9 @@ def handle_client(client_socket, player, grids, turn):
             
             # change de tour
             turn[0] = J2 if player == J1 else J1
-        # pendant le tour de l'autre joueur
         else:
             client_socket.send("Waiting for the other player...\n".encode())
-        while turn [0] != player:
+        while turn[0] != player:
             time.sleep(1) 
 
         # Envoie uniquement la partie de la grille pour le joueur courant
@@ -38,15 +37,22 @@ def handle_client(client_socket, player, grids, turn):
     # Quand le jeu est terminé
     client_socket.send("Game over\n".encode())
     client_socket.send(grids[0].display_string().encode())
+    other_socket.send("Game over\n".encode())
+    other_socket.send(grids[0].display_string().encode())
 
+    # envoie  msg du resultat à chaque joueur
     if grids[0].gameOver() == player:
-        client_socket.send(f"Player {player} wins!\n".encode())
+        client_socket.send("You have won!\n".encode())
+        other_socket.send("You have lost!\n".encode())
     elif grids[0].gameOver() == (J2 if player == J1 else J1):
-        client_socket.send(f"Player {J2 if player == J1 else J1} wins!\n".encode())
+        client_socket.send("You have lost!\n".encode())
+        other_socket.send("You have won!\n".encode())
     else:
         client_socket.send("It's a draw!\n".encode())
+        other_socket.send("It's a draw!\n".encode())
 
     client_socket.close()
+    other_socket.close()
 
 def main():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -57,11 +63,16 @@ def main():
     grids = [grid(), grid(), grid()]
     turn = [J1]  
 
-    
-    for player in [J1, J2]:
-        client_socket, _ = server_socket.accept()
-        print(f"Connection from player {player}")
-        Thread(target=handle_client, args=(client_socket, player, grids, turn)).start()
+    # Acceptation des connexions et gestion des deux joueurs
+    client_socket1, _ = server_socket.accept()
+    print("Connection from player 1")
+    client_socket2, _ = server_socket.accept()
+    print("Connection from player 2")
+
+    # Création des threads pour chaque joueur
+    Thread(target=handle_client, args=(client_socket1, J1, grids, turn, client_socket2)).start()
+    Thread(target=handle_client, args=(client_socket2, J2, grids, turn, client_socket1)).start()
 
 if __name__ == "__main__":
     main()
+
