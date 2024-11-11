@@ -1,6 +1,4 @@
 
-
-
 #!/usr/bin/python3
 
 symbols = [' ', 'O', 'X']
@@ -53,9 +51,3 @@ class grid:
         if all(cell != EMPTY for cell in self.cells):
             return 0
         return -1
-
-
-
-
-
-
