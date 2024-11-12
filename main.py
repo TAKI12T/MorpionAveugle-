@@ -31,15 +31,17 @@ def handle_client(client_socket, player, grids, turn, other_socket, scores):
                     while shot < 0 or shot >= NB_CELLS:
                         client_socket.send(f"Player {player}, enter your move (0-8): ".encode())
                         shot = int(client_socket.recv(1024).decode().strip())
-                # si la case est deja prises coup perdu
-                if grids[0].cells[shot] != EMPTY:
-                    client_socket.send("Cell already taken.\n".encode())
-                    grids[player].cells[shot] = grids[0].cells[shot]
+                        # si la case est deja prises coup update de la grille
+                        if grids[0].cells[shot] != EMPTY:
+                            grids[player].cells[shot] = grids[0].cells[shot]
+                            client_socket.send("Cell already taken, Try Again.\n".encode())
+                            client_socket.send(grids[player].display_string().encode())
+                            shot = -1
+                    
                 # si case vide alors coup joué
-                else:
-                    grids[player].cells[shot] = player
-                    grids[0].play(player, shot)
-              
+                grids[player].cells[shot] = player
+                grids[0].play(player, shot)
+
                 turn[0] = J2 if player == J1 else J1
             else:
                 client_socket.send("Waiting for the other player...\n".encode())
@@ -96,6 +98,7 @@ def handle_client(client_socket, player, grids, turn, other_socket, scores):
 
 def main():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
     server_socket.bind(('localhost', 5555))
     server_socket.listen(2)
     print("Server listening on port 5555")
