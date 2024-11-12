@@ -23,21 +23,25 @@ def handle_client(client_socket, player, grids, turn, other_socket, scores):
                 client_socket.send("Your turn!\n".encode())
                 
                 if is_bot:
-                    # pour que le bot joue les coups aleatoire 
+                    # pour que le bot joue les coups aleatoire dans des cases vides
                     shot = random.choice([i for i, cell in enumerate(grids[0].cells) if cell == EMPTY])
                     client_socket.send(f"Bot played move {shot}\n".encode())
                 else:
                     shot = -1
-                    while shot < 0 or shot >= NB_CELLS or grids[0].cells[shot] != EMPTY:
+                    while shot < 0 or shot >= NB_CELLS:
                         client_socket.send(f"Player {player}, enter your move (0-8): ".encode())
                         shot = int(client_socket.recv(1024).decode().strip())
+                        # si la case est deja prises coup update de la grille
                         if grids[0].cells[shot] != EMPTY:
-                            client_socket.send("Cell already taken, try again.\n".encode())
-                
-                # Mise à jour de la grille 
+                            grids[player].cells[shot] = grids[0].cells[shot]
+                            client_socket.send("Cell already taken, Try Again.\n".encode())
+                            client_socket.send(grids[player].display_string().encode())
+                            shot = -1
+                    
+                # si case vide alors coup joué
+                grids[player].cells[shot] = player
                 grids[0].play(player, shot)
-                grids[player].cells[shot] = grids[0].cells[shot]
-              
+
                 turn[0] = J2 if player == J1 else J1
             else:
                 client_socket.send("Waiting for the other player...\n".encode())
@@ -94,6 +98,7 @@ def handle_client(client_socket, player, grids, turn, other_socket, scores):
 
 def main():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
     server_socket.bind(('localhost', 5555))
     server_socket.listen(2)
     print("Server listening on port 5555")
