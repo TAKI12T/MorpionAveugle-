@@ -11,16 +11,14 @@ def main(server_ip):
         response = client_socket.recv(1024).decode()
         if not response:
             break
-        print(response, end="")
-
-        # Si c'est au tour du joueur, on attend l'entrée du joueur
-        if "enter your move" in response:
-            move = input()
-            client_socket.send(move.encode())
+        print(response, end="")  
+        
+        if "enter your move" in response or "Do you want to play again?" in response or "Do you want to play yourself or let a bot play?" in response:
+            user_input = input()  
+            client_socket.send(user_input.encode())  # Envoie la réponse au serveur
 
     client_socket.close()
 
 if __name__ == "__main__":
     main('localhost')
-
 
