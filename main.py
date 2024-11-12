@@ -23,20 +23,22 @@ def handle_client(client_socket, player, grids, turn, other_socket, scores):
                 client_socket.send("Your turn!\n".encode())
                 
                 if is_bot:
-                    # pour que le bot joue les coups aleatoire 
+                    # pour que le bot joue les coups aleatoire dans des cases vides
                     shot = random.choice([i for i, cell in enumerate(grids[0].cells) if cell == EMPTY])
                     client_socket.send(f"Bot played move {shot}\n".encode())
                 else:
                     shot = -1
-                    while shot < 0 or shot >= NB_CELLS or grids[0].cells[shot] != EMPTY:
+                    while shot < 0 or shot >= NB_CELLS:
                         client_socket.send(f"Player {player}, enter your move (0-8): ".encode())
                         shot = int(client_socket.recv(1024).decode().strip())
-                        if grids[0].cells[shot] != EMPTY:
-                            client_socket.send("Cell already taken, try again.\n".encode())
-                
-                # Mise à jour de la grille 
-                grids[0].play(player, shot)
-                grids[player].cells[shot] = grids[0].cells[shot]
+                # si la case est deja prises coup perdu
+                if grids[0].cells[shot] != EMPTY:
+                    client_socket.send("Cell already taken.\n".encode())
+                    grids[player].cells[shot] = grids[0].cells[shot]
+                # si case vide alors coup joué
+                else:
+                    grids[player].cells[shot] = player
+                    grids[0].play(player, shot)
               
                 turn[0] = J2 if player == J1 else J1
             else:
