@@ -1,51 +1,64 @@
 #!/usr/bin/python3
 
-import time 
+import random
+import time
 import socket
 from threading import Thread
 from grid import *
 
 def handle_client(client_socket, player, grids, turn, other_socket, scores):
+    # une demande pour savoir c'est qui veut jouer le joueur ou le bot
+    client_socket.send("Do you want to play yourself or let a bot play? (type 'me' or 'bot'): ".encode())
+    player_choice = client_socket.recv(1024).decode().strip().lower()
+    
+    is_bot = (player_choice == 'bot')
+    print(f"Player {player} chose to play {'bot' if is_bot else 'me'}")
+
     while True:
         client_socket.send(f"Welcome Player {player}\n".encode())
         client_socket.send(grids[player].display_string().encode())
 
-        # Boucle pour chaque partie
         while grids[0].gameOver() == -1:
             if turn[0] == player:
                 client_socket.send("Your turn!\n".encode())
-                shot = -1
-                while shot < 0 or shot >= NB_CELLS or grids[0].cells[shot] != EMPTY:
-                    client_socket.send(f"Player {player}, enter your move (0-8): ".encode())
-                    shot = int(client_socket.recv(1024).decode().strip())
-                    if grids[0].cells[shot] != EMPTY:
-                        client_socket.send("Cell already taken, try again.\n".encode())
                 
-                # mise a jour de la grille          
+                if is_bot:
+                    # pour que le bot joue les coups aleatoire 
+                    shot = random.choice([i for i, cell in enumerate(grids[0].cells) if cell == EMPTY])
+                    client_socket.send(f"Bot played move {shot}\n".encode())
+                else:
+                    shot = -1
+                    while shot < 0 or shot >= NB_CELLS or grids[0].cells[shot] != EMPTY:
+                        client_socket.send(f"Player {player}, enter your move (0-8): ".encode())
+                        shot = int(client_socket.recv(1024).decode().strip())
+                        if grids[0].cells[shot] != EMPTY:
+                            client_socket.send("Cell already taken, try again.\n".encode())
+                
+                # Mise à jour de la grille 
                 grids[0].play(player, shot)
                 grids[player].cells[shot] = grids[0].cells[shot]
-                
+              
                 turn[0] = J2 if player == J1 else J1
             else:
                 client_socket.send("Waiting for the other player...\n".encode())
+
             while turn[0] != player:
                 time.sleep(1)
 
-            # Envoie uniquement la partie de la grille pour le joueur courant
-            client_socket.send(grids[player].display_string().encode())
+            client_socket.send(grids[player].display_string().encode())    
 
-        # Quand le jeu est terminé
+        # quand le jeu est terminé 
         client_socket.send("Game over\n".encode())
         client_socket.send(grids[0].display_string().encode())
         other_socket.send("Game over\n".encode())
         other_socket.send(grids[0].display_string().encode())
 
-        # envoie du message de resultat à chaque joueur 
+        # envoie du mssg du resultat à chaque joueur
         if grids[0].gameOver() == player:
             client_socket.send("You have won!\n".encode())
             other_socket.send("You have lost!\n".encode())
-
-            scores[player - 1] += 1  # Ajoute un point au joueur gagnant
+            
+            scores[player - 1] += 1 #Ajoute d'un point au joueur gagnant 
 
         elif grids[0].gameOver() == (J2 if player == J1 else J1):
             client_socket.send("You have lost!\n".encode())
@@ -55,11 +68,11 @@ def handle_client(client_socket, player, grids, turn, other_socket, scores):
             client_socket.send("It's a draw!\n".encode())
             other_socket.send("It's a draw!\n".encode())
 
-        # Affichage du score 
+        # affichage du score 
         client_socket.send(f"Current Score - Player 1: {scores[0]}, Player 2: {scores[1]}\n".encode())
         other_socket.send(f"Current Score - Player 1: {scores[0]}, Player 2: {scores[1]}\n".encode())
 
-        # les demander s'ils veulent jouer une autre partie 
+        # Demande si les joueurs veulent jouer une autre partie
         client_socket.send("Do you want to play again? (yes/no): ".encode())
         other_socket.send("Do you want to play again? (yes/no): ".encode())
         response = client_socket.recv(1024).decode().strip().lower()
@@ -68,12 +81,13 @@ def handle_client(client_socket, player, grids, turn, other_socket, scores):
         if response != "yes" or other_response != "yes":
             client_socket.send("Thanks for playing!\n".encode())
             other_socket.send("Thanks for playing!\n".encode())
-            break  
+            break  # Fin de la boucle de jeu
 
-        # renitialisation de la grille pour une autre partie
+        # Réinitialise la grille pour une nouvelle partie
         grids[0] = grid()
         grids[player] = grid()
         grids[J2 if player == J1 else J1] = grid()
+
 
     client_socket.close()
     other_socket.close()
@@ -94,7 +108,7 @@ def main():
     client_socket2, _ = server_socket.accept()
     print("Connection from player 2")
 
-    # des threads pour chaque joueur
+    # Création des threads pour chaque joueur
     Thread(target=handle_client, args=(client_socket1, J1, grids, turn, client_socket2, scores)).start()
     Thread(target=handle_client, args=(client_socket2, J2, grids, turn, client_socket1, scores)).start()
 
