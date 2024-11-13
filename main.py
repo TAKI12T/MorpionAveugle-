@@ -122,13 +122,19 @@ def main():
     grids = [grid(), grid(), grid()]
     turn = [J1]
     scores = [0, 0]
-    grid_updated = [False]  # on a utilisé pour garder l'état modifiable dans les threads
+    grid_updated = [False]  # utilisé pour garder l'état modifiable dans les threads
 
+    
     client_socket1, _ = server_socket.accept()
     print("Connection from player 1")
     client_socket2, _ = server_socket.accept()
     print("Connection from player 2")
 
+    
+    Thread(target=handle_client, args=(client_socket1, J1, grids, turn, client_socket2, scores, grid_updated)).start()
+    Thread(target=handle_client, args=(client_socket2, J2, grids, turn, client_socket1, scores, grid_updated)).start()
+
+    
     observer_socket = None
     try:
         observer_socket, _ = server_socket.accept()
@@ -137,9 +143,8 @@ def main():
     except:
         print("No observer connected")
 
-    Thread(target=handle_client, args=(client_socket1, J1, grids, turn, client_socket2, scores, grid_updated, observer_socket)).start()
-    Thread(target=handle_client, args=(client_socket2, J2, grids, turn, client_socket1, scores, grid_updated, observer_socket)).start()
-
 if __name__ == "__main__":
     main()
+
+
 
