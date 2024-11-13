@@ -28,12 +28,16 @@ def handle_client(client_socket, player, grids, turn, other_socket, scores, grid
                     shot = -1
                     while shot < 0 or shot >= NB_CELLS:
                         client_socket.send(f"Player {player}, enter your move (0-8): ".encode())
-                        shot = int(client_socket.recv(1024).decode().strip())
-                        if grids[0].cells[shot] != EMPTY:
-                            grids[player].cells[shot] = grids[0].cells[shot]
-                            client_socket.send("Cell already taken, Try Again.\n".encode())
-                            client_socket.send(grids[player].display_string().encode())
+                        try:
+                            shot = int(client_socket.recv(1024).decode().strip())
+                        except:
+                            client_socket.send("Error : Type a number within [0-8]\n".encode())
                             shot = -1
+                    if grids[0].cells[shot] != EMPTY:
+                        grids[player].cells[shot] = grids[0].cells[shot]
+                        client_socket.send("Cell already taken, Try Again.\n".encode())
+                        client_socket.send(grids[player].display_string().encode())
+                        shot = -1
 
                 grids[player].cells[shot] = player
                 grids[0].play(player, shot)
