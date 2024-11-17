@@ -24,6 +24,12 @@ def handle_client(client_socket, player, grids, turn, other_socket, scores, grid
                 if is_bot:
                     shot = random.choice([i for i, cell in enumerate(grids[0].cells) if cell == EMPTY])
                     client_socket.send(f"Bot played move {shot}\n".encode())
+                    
+                    grids[player].cells[shot] = player
+                    grids[0].play(player, shot)
+                    grid_updated[0] = True  #l'indicateur a True pour signaler un changement
+                    client_socket.send(grids[player].display_string().encode())
+                    turn[0] = J2 if player == J1 else J1
                 else:
                     shot = -1
                     while shot < 0 or shot >= NB_CELLS:
@@ -38,19 +44,17 @@ def handle_client(client_socket, player, grids, turn, other_socket, scores, grid
                         client_socket.send("Cell already taken, Try Again.\n".encode())
                         client_socket.send(grids[player].display_string().encode())
                         shot = -1
-
-                grids[player].cells[shot] = player
-                grids[0].play(player, shot)
-                grid_updated[0] = True  #l'indicateur a True pour signaler un changement
-
-                turn[0] = J2 if player == J1 else J1
+                    else :
+                        grids[player].cells[shot] = player
+                        grids[0].play(player, shot)
+                        grid_updated[0] = True  #l'indicateur a True pour signaler un changement
+                        client_socket.send(grids[player].display_string().encode())
+                        turn[0] = J2 if player == J1 else J1               
             else:
                 client_socket.send("Waiting for the other player...\n".encode())
-
+            
             while turn[0] != player:
                 time.sleep(1)
-
-            client_socket.send(grids[player].display_string().encode())
 
         client_socket.send("Game over\n".encode())
         client_socket.send(grids[0].display_string().encode())
